@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facture Professionnelle</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      display: flex;
+      padding: 20px;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 30%;
+      margin-right: 20px;
+    }
+
+    .content {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 60%;
+    }
+
+    .form-section {
+      margin-bottom: 20px;
+    }
+
+    .form-section label {
+      font-weight: 500;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .form-section input, .form-section select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      padding: 10px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .invoice-preview {
+      color: #333;
+      font-family: 'Poppins', sans-serif;
+      padding: 20px;
+    }
+
+    .invoice-preview h2 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .invoice-preview p {
+      margin-bottom: 10px;
+    }
+
+    .invoice-preview table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .invoice-preview table, .invoice-preview th, .invoice-preview td {
+      border: 1px solid #ddd;
+    }
+
+    .invoice-preview th, .invoice-preview td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    .invoice-summary {
+      text-align: right;
+      margin-top: 20px;
+    }
+
+    .invoice-summary td {
+      padding: 5px 10px;
+    }
+
+    .footer-note {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #555;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>Entrez les détails</h2>
+
+      <div class="form-section">
+        <label for="companyName">Nom de l'entreprise</label>
+        <input type="text" id="companyName" placeholder="Votre Entreprise">
+      </div>
+
+      <div class="form-section">
+        <label for="street">Adresse</label>
+        <input type="text" id="street" placeholder="Rue, Ville, Code Postal">
+      </div>
+
+      <div class="form-section">
+        <label for="siret">SIRET</label>
+        <input type="text" id="siret" placeholder="Numéro SIRET">
+      </div>
+
+      <div class="form-section">
+        <label for="tva">TVA</label>
+        <input type="text" id="tva" placeholder="Numéro TVA (optionnel)">
+      </div>
+
+      <div class="form-section">
+        <label for="invoiceNumber">Numéro de Facture</label>
+        <input type="text" id="invoiceNumber" placeholder="F-2024-001">
+      </div>
+
+      <div class="form-section">
+        <label for="invoiceDate">Date d'émission</label>
+        <input type="date" id="invoiceDate">
+      </div>
+
+      <div class="form-section">
+        <label for="dueDate">Date d'échéance</label>
+        <input type="date" id="dueDate">
+      </div>
+
+      <div class="form-section">
+        <label for="description">Description du produit</label>
+        <input type="text" id="description" placeholder="Ex: Développement web">
+      </div>
+
+      <div class="form-section">
+        <label for="quantity">Quantité</label>
+        <input type="number" id="quantity" min="1" value="1">
+      </div>
+
+      <div class="form-section">
+        <label for="unitPrice">Prix unitaire</label>
+        <input type="number" id="unitPrice" step="0.01" placeholder="Ex: 500">
+      </div>
+
+      <button class="btn-primary" onclick="generatePDF()">Télécharger Facture PDF</button>
+    </div>
+
+    <!-- Preview Section -->
+    <div class="content">
+      <div class="invoice-preview" id="invoicePreview">
+        <h2>FACTURE</h2>
+        <p><strong>Numéro :</strong> <span id="previewInvoiceNumber"></span></p>
+        <p><strong>Date d'émission :</strong> <span id="previewInvoiceDate"></span></p>
+        <p><strong>Date d'échéance :</strong> <span id="previewDueDate"></span></p>
+        <p><strong>Email :</strong> contact@votreentreprise.com</p>
+        <p><strong>SIRET :</strong> <span id="previewSiret"></span></p>
+        <p><strong>TVA :</strong> <span id="previewTva"></span></p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Quantité</th>
+              <th>Prix unitaire</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody">
+            <tr>
+              <td><span id="previewDescription"></span></td>
+              <td><span id="previewQuantity"></span></td>
+              <td><span id="previewUnitPrice"></span> €</td>
+              <td><span id="previewTotal"></span> €</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="invoice-summary">
+          <table>
+            <tbody>
+              <tr>
+                <td>Total HT :</td>
+                <td id="totalHT">0,00 €</td>
+              </tr>
+              <tr>
+                <td>TVA (20%) :</td>
+                <td id="totalTVA">0,00 €</td>
+              </tr>
+              <tr>
+                <td>Total TTC :</td>
+                <td id="totalTTC">0,00 €</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer-note">
+          Pas d’escompte accordé pour paiement anticipé. En cas de non-paiement à la date d’échéance, des pénalités calculées à trois fois le taux d’intérêt légal seront appliquées. Tout retard de paiement entraînera une indemnité forfaitaire pour frais de recouvrement de 40€.
+        </div>
+
+        <div class="footer-note">
+          <p><strong>Détails du paiement</strong></p>
+          <p>Nom du bénéficiaire : Votre Entreprise</p>
+          <p>IBAN : FR76 1234 5678 9012 3456 7890 123</p>
+          <p>BIC : ABCDFRPP</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updatePreview() {
+      const companyName = document.getElementById('companyName').value;
+      const siret = document.getElementById('siret').value;
+      const tva = document.getElementById('tva').value || 'N/A';
+      const invoiceNumber = document.getElementById('invoiceNumber').value;
+      const invoiceDate = document.getElementById('invoiceDate').value;
+      const dueDate = document.getElementById('dueDate').value;
+      const description = document.getElementById('description').value;
+      const quantity = document.getElementById('quantity').value;
+      const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
+      const total = quantity * unitPrice;
+      const totalTVA = total * 0.2;
+      const totalTTC = total + totalTVA;
+
+      document.getElementById('previewInvoiceNumber').innerText = invoiceNumber;
+      document.getElementById('previewInvoiceDate').innerText = invoiceDate;
+      document.getElementById('previewDueDate').innerText = dueDate;
+      document.getElementById('previewSiret').innerText = siret;
+      document.getElementById('previewTva').innerText = tva;
+      document.getElementById('previewDescription').innerText = description;
+      document.getElementById('previewQuantity').innerText = quantity;
+      document.getElementById('previewUnitPrice').innerText = unitPrice.toFixed(2);
+      document.getElementById('previewTotal').innerText = total.toFixed(2);
+      document.getElementById('totalHT').innerText = total.toFixed(2) + ' €';
+      document.getElementById('totalTVA').innerText = totalTVA.toFixed(2) + ' €';
+      document.getElementById('totalTTC').innerText = totalTTC.toFixed(2) + ' €';
+    }
+
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', updatePreview);
+    });
+
+    function generatePDF() {
+      const element = document.getElementById('invoicePreview');
+      html2pdf().from(element).set({
+        margin: 1,
+        filename: 'facture.pdf',
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      }).save();
+    }
+  </script>
+
+</body>
+</html>
