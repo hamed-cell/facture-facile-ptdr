@@ -148,7 +148,7 @@
 
       <div class="form-section">
         <label for="tva">TVA</label>
-        <input type="text" id="tva" placeholder="Numéro TVA (optionnel)">
+        <input type="number" id="tva" placeholder="Taux TVA (%)" min="0" max="100" step="0.01">
       </div>
 
       <div class="form-section">
@@ -179,6 +179,22 @@
       <div class="form-section">
         <label for="unitPrice">Prix unitaire</label>
         <input type="number" id="unitPrice" step="0.01" placeholder="Ex: 500">
+      </div>
+
+      <!-- Détails du paiement -->
+      <div class="form-section">
+        <label for="beneficiaryName">Nom du bénéficiaire</label>
+        <input type="text" id="beneficiaryName" placeholder="Votre Entreprise">
+      </div>
+
+      <div class="form-section">
+        <label for="iban">IBAN</label>
+        <input type="text" id="iban" placeholder="FR76 1234 5678 9012 3456 7890 123">
+      </div>
+
+      <div class="form-section">
+        <label for="bic">BIC</label>
+        <input type="text" id="bic" placeholder="ABCDFRPP">
       </div>
 
       <button class="btn-primary" onclick="generatePDF()">Télécharger Facture PDF</button>
@@ -221,8 +237,8 @@
                 <td>Total HT :</td>
                 <td id="totalHT">0,00 €</td>
               </tr>
-              <tr>
-                <td>TVA (20%) :</td>
+              <tr id="tvaRow">
+                <td>TVA (<span id="tvaRate">20</span>%) :</td>
                 <td id="totalTVA">0,00 €</td>
               </tr>
               <tr>
@@ -239,9 +255,9 @@
 
         <div class="footer-note">
           <p><strong>Détails du paiement</strong></p>
-          <p>Nom du bénéficiaire : Votre Entreprise</p>
-          <p>IBAN : FR76 1234 5678 9012 3456 7890 123</p>
-          <p>BIC : ABCDFRPP</p>
+          <p>Nom du bénéficiaire : <span id="previewBeneficiaryName">Votre Entreprise</span></p>
+          <p>IBAN : <span id="previewIban">FR76 1234 5678 9012 3456 7890 123</span></p>
+          <p>BIC : <span id="previewBic">ABCDFRPP</span></p>
         </div>
       </div>
     </div>
@@ -251,7 +267,7 @@
     function updatePreview() {
       const companyName = document.getElementById('companyName').value;
       const siret = document.getElementById('siret').value;
-      const tva = document.getElementById('tva').value || 'N/A';
+      const tvaRate = parseFloat(document.getElementById('tva').value) || 0;
       const invoiceNumber = document.getElementById('invoiceNumber').value;
       const invoiceDate = document.getElementById('invoiceDate').value;
       const dueDate = document.getElementById('dueDate').value;
@@ -259,14 +275,18 @@
       const quantity = document.getElementById('quantity').value;
       const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
       const total = quantity * unitPrice;
-      const totalTVA = total * 0.2;
+      const totalTVA = tvaRate > 0 ? total * (tvaRate / 100) : 0;
       const totalTTC = total + totalTVA;
+
+      const beneficiaryName = document.getElementById('beneficiaryName').value;
+      const iban = document.getElementById('iban').value;
+      const bic = document.getElementById('bic').value;
 
       document.getElementById('previewInvoiceNumber').innerText = invoiceNumber;
       document.getElementById('previewInvoiceDate').innerText = invoiceDate;
       document.getElementById('previewDueDate').innerText = dueDate;
       document.getElementById('previewSiret').innerText = siret;
-      document.getElementById('previewTva').innerText = tva;
+      document.getElementById('previewTva').innerText = tvaRate > 0 ? tvaRate + '%' : 'N/A';
       document.getElementById('previewDescription').innerText = description;
       document.getElementById('previewQuantity').innerText = quantity;
       document.getElementById('previewUnitPrice').innerText = unitPrice.toFixed(2);
@@ -274,6 +294,19 @@
       document.getElementById('totalHT').innerText = total.toFixed(2) + ' €';
       document.getElementById('totalTVA').innerText = totalTVA.toFixed(2) + ' €';
       document.getElementById('totalTTC').innerText = totalTTC.toFixed(2) + ' €';
+
+      // Masquer la TVA si c'est à 0
+      const tvaRow = document.getElementById('tvaRow');
+      if (tvaRate === 0) {
+        tvaRow.style.display = 'none';
+      } else {
+        tvaRow.style.display = 'table-row';
+        document.getElementById('tvaRate').innerText = tvaRate;
+      }
+      
+      document.getElementById('previewBeneficiaryName').innerText = beneficiaryName;
+      document.getElementById('previewIban').innerText = iban;
+      document.getElementById('previewBic').innerText = bic;
     }
 
     document.querySelectorAll('input').forEach(input => {
